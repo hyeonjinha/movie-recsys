@@ -7,7 +7,7 @@ import { Input } from "./components/ui/input"
 import { Label } from "./components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select"
 import { Textarea } from "./components/ui/textarea"
-import { Star, Film, UserPlus, MessageSquarePlus } from 'lucide-react'
+import { Star, Film, UserPlus, MessageSquarePlus, Plus, ExternalLink } from 'lucide-react'
 import './styles/globals.css'
 
 interface Movie {
@@ -20,6 +20,7 @@ interface Movie {
   rating: number;
   userRating: number;
   review: string;
+  isLoading?: boolean;
 }
 const MovieRecommendationBot = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -51,13 +52,14 @@ const MovieRecommendationBot = () => {
 
   const fetchAdditionalMovies = async () => {
     setIsLoading(true);
-    const additionalMovies = [
+    const newMovies: Movie[] = [
       { id: movies.length + 1, title: "매트릭스", year: 1999, genre: "SF, 액션", director: "워쇼스키 자매", cast: "키아누 리브스, 로렌스 피시번", rating: 8.7, userRating: 0, review: "현실과 가상의 경계를 탐험하는 혁신적인 SF 영화. 철학적 질문과 혁명적인 시각 효과를 결합하여 영화 역사에 큰 획을 그었다." },
       { id: movies.length + 2, title: "라라랜드", year: 2016, genre: "뮤지컬, 로맨스", director: "데미언 셔젤", cast: "라이언 고슬링, 엠마 스톤", rating: 8.0, userRating: 0, review: "꿈과 현실 사이에서 고민하는 두 예술가의 사랑 이야기. 아름다운 음악과 화려한 춤, 그리고 LA의 풍경이 어우러져 환상적인 분위기를 자아낸다." },
     ];
+    setMovies(prevMovies => [...prevMovies, ...newMovies]);
+      
     setTimeout(() => {
-      setMovies(prevMovies => [...prevMovies, ...additionalMovies]);
-      setIsLoading(false);
+      setMovies(prevMovies => prevMovies.map(movie => ({...movie, isLoading: false})));
     }, 1000);
   };
 
@@ -110,10 +112,10 @@ const MovieRecommendationBot = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50">
       <Card className="w-full max-w-4xl bg-white shadow-md rounded-lg overflow-hidden">
-        <CardHeader className="text-center bg-slate-700 text-white p-6">
+        <CardHeader className="text-center bg-slate-700 text-white p-6 mb-6">
           <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-white shadow-lg">
             <AvatarImage src="/api/placeholder/200/200" alt="Movie Bot" />
-            <AvatarFallback>MB</AvatarFallback>
+            <AvatarFallback>LLecommend</AvatarFallback>
           </Avatar>
           <h1 className="text-3xl font-bold mb-2">영화 추천 시스템</h1>
           <p className="text-xl mb-4">당신의 취향: <span className="font-semibold bg-white text-slate-700 px-2 py-1 rounded-full">{userTaste}</span></p>
@@ -212,39 +214,55 @@ const MovieRecommendationBot = () => {
             </Dialog>
           </div>
         </CardHeader>
+        <div className="text-center p-6">
+          <h3 className="text-lg font-semibold text-slate-700">추천 영화 목록</h3>
+          <p className="text-sm text-slate-600">당신의 취향은 특별합니다! 공유할수록 더 멋진 영화들을 만나게 될 거예요. 함께 탐험해볼까요?</p>
+        </div>
+        <div className="text-center mb-4">
+            <Button onClick={handleNewRecommendation} className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+              <Plus className="mr-2 h-5 w-5" /> 새로운 영화 발견하기
+            </Button>
+        </div>
         <CardContent className="p-6">
           <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            {isLoading ? (
-              <p className="text-center w-full col-span-2 text-2xl text-slate-600 animate-pulse">🎬 영화를 찾고 있어요...</p>
-            ) : (
-              movies.map((movie) => (
-                <Card key={movie.id} className="bg-white shadow hover:shadow-md transition-all duration-300 overflow-hidden rounded-lg">
-                  <CardHeader className="text-xl font-bold border-b pb-2 bg-slate-100 text-slate-700">{movie.title} ({movie.year})</CardHeader>
-                  <CardContent className="space-y-3 pt-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-semibold text-slate-600">{movie.genre}</span>
-                      <span className="text-sm font-bold text-slate-600">평점: {movie.rating}/10</span>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm"><span className="font-semibold text-slate-600">감독:</span> {movie.director}</p>
-                      <p className="text-sm"><span className="font-semibold text-slate-600">출연:</span> {movie.cast}</p>
-                    </div>
-                    <div className="mt-4">
-                      <h4 className="text-lg font-semibold mb-2 text-slate-700">리뷰</h4>
-                      <p className="text-sm text-slate-600 leading-relaxed">{movie.review}</p>
-                    </div>
-                    <div className="mt-4">
-                      <h4 className="text-lg font-semibold mb-2 text-slate-700">평가하기</h4>
-                      <StarRating rating={movie.userRating} onRate={(rating) => handleRating(movie.id, rating)} />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
+            {movies.slice().reverse().map((movie) => (
+            <Card key={movie.id} className={`bg-white shadow hover:shadow-md transition-all duration-300 overflow-hidden rounded-lg ${movie.isLoading ? 'animate-pulse' : ''}`}>
+              {movie.isLoading ? (
+                <div className="p-4 flex items-center justify-center h-full">
+                  <p className="text-center w-full col-span-2 text-2xl text-slate-600 animate-pulse">🎬 영화를 찾고 있어요...</p>
+                </div>
+              ) : (
+                  <Card key={movie.id} className="bg-white shadow hover:shadow-md transition-all duration-300 overflow-hidden rounded-lg">
+                    <CardHeader className="text-xl font-bold border-b pb-2 bg-slate-100 text-slate-700">{movie.title} ({movie.year})</CardHeader>
+                    <CardContent className="space-y-3 pt-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-semibold text-slate-600">{movie.genre}</span>
+                        <span className="text-sm font-bold text-slate-600">평점: {movie.rating}/10</span>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm"><span className="font-semibold text-slate-600">감독:</span> {movie.director}</p>
+                        <p className="text-sm"><span className="font-semibold text-slate-600">출연:</span> {movie.cast}</p>
+                      </div>
+                      <div className="mt-4">
+                        <h4 className="text-lg font-semibold mb-2 text-slate-700">리뷰</h4>
+                        <p className="text-sm text-slate-600 leading-relaxed">{movie.review}</p>
+                      </div>
+                      <div className="mt-4">
+                        <h4 className="text-lg font-semibold mb-2 text-slate-700">평가하기</h4>
+                        <StarRating rating={movie.userRating} onRate={(rating) => handleRating(movie.id, rating)} />
+                      </div>
+                      <Button className="bg-blue-600 text-white w-full flex items-center justify-center mb-4" onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(movie.title + ' ' + movie.year + ' 영화')}`, '_blank')}>
+                        <ExternalLink className="mr-2 h-4 w-4" /> 영화 정보 검색
+                      </Button>
+                    </CardContent>
+                  </Card>
+              )}
+            </Card>
+          ))}
           </div>
         </CardContent>
-      </Card>
-    </div>
+    </Card> 
+  </div>
   );
 };
 
